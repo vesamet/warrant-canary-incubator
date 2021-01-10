@@ -23,6 +23,7 @@
                     label="Domain*"
                     color="secondary"
                     dense
+                    class="mb-2"
                     :rules="[(v) => !!v || 'A domain name is required.']"
                     hint="
                     Specifies the web address (if any) tied to the entity. 
@@ -39,11 +40,11 @@
                       dense
                       hint="This key is used for signing the canary itself to prove authenticity."
                       :rules="[(v) => !!v || 'A sign key is required.']"
-                      class="d-inline-block mr-2"
-                      style="max-width: 80%"
+                      class="d-inline-block mr-2 mb-2"
+                      style="width: 80%"
                       placeholder="Y4PsjneDjxckrgibojs38VDWFBTyvlVtTQR3Z9RTRw0="
                     />
-                    <span style="max-width: 20%"
+                    <span style="width: 20%"
                       ><KeyGenerator
                         :privateKey="signKey"
                         :publicKey="pubkey"
@@ -57,14 +58,14 @@
                       label="New sign key"
                       color="secondary"
                       type="password"
-                      class="d-inline-block mr-2"
+                      class="d-inline-block mr-2 mb-2"
                       prepend-inner-icon="mdi-key"
-                      style="max-width: 80%"
+                      style="width: 80%"
                       hint="Specifies the expected replacement public key (if any) tied to the entity for any future signatures."
                       dense
                       placeholder="(optional)"
                     />
-                    <span style="max-width: 20%"
+                    <span style="width: 20%"
                       ><KeyGenerator
                         :privateKey="newSignKey"
                         :publicKey="newpubkey"
@@ -88,6 +89,7 @@
                         v-model="expiry"
                         label="Expiry date*"
                         readonly
+                        dense
                         prepend-icon="mdi-calendar"
                         :rules="[(v) => !!v || 'An expiry date is required.']"
                         v-bind="attrs"
@@ -112,7 +114,7 @@
                   <v-switch
                     v-model="triggered"
                     color="error"
-                    class="py-0 my-0"
+                    class="pb-0 pt-2 my-0"
                     :label="triggered ? 'Triggered' : 'Not triggered'"
                   ></v-switch>
                 </v-col>
@@ -124,6 +126,7 @@
                     color="secondary"
                     prepend-inner-icon="mdi-label-variant"
                     dense
+                    class="mb-2"
                     placeholder="(optional)"
                   />
                   <div v-if="securityLevel === 'medium'" class="mb-4">
@@ -132,15 +135,15 @@
                       label="Panic key"
                       color="secondary"
                       type="password"
-                      style="max-width: 80%"
-                      class="d-inline-block mr-2"
+                      style="width: 80%"
+                      class="d-inline-block mr-2 mb-2"
                       hint="Specifies the public key (if any) that can trigger the canary simply by being signed by it. 
                     This is used when the party wishes to end the canary for whatever reason."
                       prepend-inner-icon="mdi-key-star"
                       dense
                       placeholder="(optional)"
                     />
-                    <span style="max-width: 20%"
+                    <span style="width: 20%"
                       ><KeyGenerator
                         :privateKey="privatePanicKey"
                         :publicKey="panickey"
@@ -153,14 +156,14 @@
                       prepend-inner-icon="mdi-key-star"
                       label="New panic key"
                       type="password"
-                      style="max-width: 80%"
-                      class="d-inline-block mr-2"
+                      style="width: 80%"
+                      class="d-inline-block mr-2 mb-2"
                       color="secondary"
                       dense
                       hint="Specifies the replacement public panic key (if any) for any future signatures."
                       placeholder="(optional)"
                     />
-                    <span style="max-width: 20%"
+                    <span style="width: 20%"
                       ><KeyGenerator
                         :privateKey="privateNewPanicKey"
                         :publicKey="newpanickey"
@@ -176,6 +179,7 @@
                     color="secondary"
                     prepend-inner-icon="mdi-label-variant"
                     dense
+                    class="mb-2"
                     placeholder="(optional)"
                   />
                   <v-switch
@@ -187,10 +191,10 @@
                 </v-col>
                 <transition name="fade">
                   <v-col v-if="triggered" cols="12" class="py-0 my-0">
-                    <v-card outlined class="mb-2">
+                    <v-card outlined class="mb-2 pa-2">
                       <p>Add the threat(s) you wish to trigger</p>
                       <v-autocomplete
-                        class="mt-2"
+                        class="mt-2 mb-2"
                         label="Codes"
                         v-model="codes"
                         :items="availableCodes"

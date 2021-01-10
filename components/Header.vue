@@ -31,8 +31,8 @@ export default {
 .main-header {
   position: relative;
   overflow: visible;
-  min-height: 180px;
-  margin-bottom: 20px;
+  min-height: 160px;
+  margin-bottom: 0px;
   padding-top: 20px;
 }
 h1 {

@@ -1,12 +1,12 @@
 <template>
-  <v-row justify="center" align="center" class="ma-0 pa-0">
+  <v-row justify="center" align="center" class="mb-0 mt-5 pa-0">
     <v-col cols="12">
       <v-row class="mb-3" justify="center" align="center">
         <v-col cols="5" class="text-center">
           <v-btn
             color="black"
             class="action-button mt-5"
-            @click="$router.push({ path: '/read' })"
+            @click="$router.push({ path: '/validate' })"
           >
             <Title class="px-2" dark bg="transparent">Validate</Title>
           </v-btn>
@@ -25,7 +25,7 @@
           <v-btn
             color="black"
               class="action-button mt-5"
-            @click="$router.push({ path: '/create' })"
+            @click="$router.push({ path: '/sign' })"
           >
             <Title class="px-2" dark bg="transparent">Sign</Title>
           </v-btn>
