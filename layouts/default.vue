@@ -4,23 +4,24 @@
       <v-container class="main-container">
         <Header />
         <div class="main-content">
-        <transition name="fade" mode="out-in">
-          <nuxt />
-        </transition>
+          <transition name="fade" mode="out-in">
+            <nuxt />
+          </transition>
         </div>
         <Footer />
       </v-container>
+      <notifications group="foo" position="bottom center" :duration="7000" classes="vue-notification mb-12"/>
     </v-main>
   </v-app>
 </template>
 
 <script>
-import Header from '@/components/Header.vue';
-import Footer from '@/components/Footer.vue';
+import Header from '@/components/Header.vue'
+import Footer from '@/components/Footer.vue'
 export default {
   components: {
     Header,
-    Footer
+    Footer,
   },
   data() {
     return {}
@@ -41,7 +42,7 @@ html {
 .main-container {
   position: relative;
   margin: auto;
-  overflow:visible;
+  overflow: visible;
   max-width: 800px !important;
   margin-top: 90px;
   padding: 0 !important;

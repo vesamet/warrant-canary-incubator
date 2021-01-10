@@ -5,11 +5,10 @@
         <v-col cols="5" class="text-center">
           <v-btn
             color="black"
-            flat
             class="action-button mt-5"
             @click="$router.push({ path: '/read' })"
           >
-            <Title class="px-2" dark bg="transparent">Read</Title>
+            <Title class="px-2" dark bg="transparent">Validate</Title>
           </v-btn>
           <img
             src="@/assets/img/canary-read.png"
@@ -25,11 +24,10 @@
           />
           <v-btn
             color="black"
-            flat
-            class="action-button mt-5"
+              class="action-button mt-5"
             @click="$router.push({ path: '/create' })"
           >
-            <Title class="px-2" dark bg="transparent">Create</Title>
+            <Title class="px-2" dark bg="transparent">Sign</Title>
           </v-btn>
         </v-col>
       </v-row>

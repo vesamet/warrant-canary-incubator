@@ -33,7 +33,7 @@
       <v-text-field
         :value="privateKey"
         color="primary"
-        label="Private Key"
+        :label="isOptional ? 'Private Key (Not needed)' : 'Private Key'"
         light
         counter
         dense
@@ -49,7 +49,7 @@
         counter
         style="max-width: 82%"
         class="d-inline-block"
-        label="Public Key"
+        :label="isOptional ? 'Public Key' : 'Public Key (Optional)'"
         @input="(k) => $emit('update:publicKey', k)"
       ></v-text-field>
       <span style="max-width: 18%"
@@ -60,7 +60,9 @@
         <v-btn @click="clear()" color="info" class="black--text mx-3" small
           >Clear</v-btn
         >
-        <v-btn @click="isOpen = false" color="primary" class="mx-3" small>Done</v-btn>
+        <v-btn @click="isOpen = false" color="primary" class="mx-3" small
+          >Done</v-btn
+        >
       </div>
     </v-card>
   </v-menu>
@@ -101,8 +103,10 @@ export default {
       this.$emit('update:publicKey', bytesToBase64(newPublicKey))
     },
     async renewPublicKey() {
-      let newPublicKey = await ed.getPublicKey(this.privateKey)
-      this.$emit('update:publicKey', bytesToBase64(newPublicKey))
+      if (this.privateKey) {
+        let newPublicKey = await ed.getPublicKey(this.privateKey)
+        this.$emit('update:publicKey', bytesToBase64(newPublicKey))
+      }
     },
     clear() {
       this.$emit('update:privateKey', '')

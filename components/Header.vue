@@ -2,23 +2,27 @@
   <div class="secondary black--text main-header">
     <Logo />
     <div class="tabbed">
-    <h1>Warrant Canary <span>Incubator</span></h1>
-    <v-divider class="my-2 black"></v-divider>
-    <p>
-      A tool to sign &amp; validate <LinkText>warrant canaries</LinkText> in compliance with
-       <LinkText>CanaryTrail</LinkText> standard.
-    </p>
+      <h1>Warrant Canary <span>Incubator</span></h1>
+      <v-divider class="my-2 black"></v-divider>
+      <p>
+        A tool to sign &amp; validate
+        <LinkText link="https://en.wikipedia.org/wiki/Warrant_canary"
+          >warrant canaries</LinkText
+        >
+        in compliance with
+        <LinkText link="https://canarytail.org">CanaryTrail</LinkText> standard.
+      </p>
     </div>
   </div>
 </template>
 
 <script>
 import Logo from '@/components/Logo.vue'
-import LinkText from '@/components/LinkText.vue';
+import LinkText from '@/components/LinkText.vue'
 export default {
   components: {
     Logo,
-    LinkText
+    LinkText,
   },
 }
 </script>
@@ -26,7 +30,7 @@ export default {
 <style scoped>
 .main-header {
   position: relative;
-    overflow: visible;
+  overflow: visible;
   min-height: 180px;
   margin-bottom: 20px;
   padding-top: 20px;
