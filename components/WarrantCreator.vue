@@ -30,7 +30,7 @@
                     This is used for simplistic TLS/SSL certificate verification of authenticity as well."
                     placeholder="www.cryptanalys.is"
                   />
-                  <div v-if="securityLevel === 'medium'" class="mb-4">
+                  <div v-if="securityLevel === 'medium'" class="mb-3">
                     <v-text-field
                       v-model="signKey"
                       label="Private key for signing*"
@@ -40,7 +40,7 @@
                       dense
                       hint="This key is used for signing the canary itself to prove authenticity."
                       :rules="[(v) => !!v || 'A sign key is required.']"
-                      class="d-inline-block mr-2 mb-2"
+                      class="d-inline-block mr-2 mb-0"
                       style="width: 80%"
                       placeholder="Y4PsjneDjxckrgibojs38VDWFBTyvlVtTQR3Z9RTRw0="
                     />
@@ -54,6 +54,7 @@
                       />
                     </span>
                     <v-text-field
+                      v-if="!canaryIsNew"
                       v-model="newpubkey"
                       label="New sign key"
                       color="secondary"
@@ -67,6 +68,7 @@
                     />
                     <span style="width: 20%"
                       ><KeyGenerator
+                        v-if="!canaryIsNew"
                         :privateKey="newSignKey"
                         :publicKey="newpubkey"
                         @update:publicKey="(k) => (newpubkey = k)"
@@ -94,7 +96,7 @@
                         :rules="[(v) => !!v || 'An expiry date is required.']"
                         v-bind="attrs"
                         v-on="on"
-                        class="py-0"
+                        class="py-0 mt-0"
                       ></v-text-field>
                     </template>
                     <v-date-picker v-model="expiry" no-title scrollable>
@@ -188,6 +190,22 @@
                     class="py-0 my-0"
                     label="Prove sign date by block hash"
                   ></v-switch>
+                  <p v-if="useBlockHash && fetchHashError">
+                    Paste the first block hash from
+                    <LinkText link="https://blockchain.info/latestblock"
+                      >this link</LinkText
+                    >
+                    in the field above.<br />
+                    <v-text-field
+                      v-model="hash"
+                      prepend-inner-icon="mdi-bitcoin"
+                      label="Latest block hash"
+                      class="d-inline-block mt-2"
+                      color="secondary"
+                      dense
+                      placeholder="0000000000000000000033c3a37d18ee679f05dedc52e807b7177b521a825fcd"
+                    />
+                  </p>
                 </v-col>
                 <transition name="fade">
                   <v-col v-if="triggered" cols="12" class="py-0 my-0">
@@ -290,6 +308,7 @@
 import * as ed from 'noble-ed25519'
 import { bytesToBase64 } from '@/utils/base64'
 import '@/assets/jsonEditorTheme.js'
+import '@/assets/jsonEditorCustomStyle.css'
 
 import Title from './Title.vue'
 import KeyGenerator from '@/components/KeyGenerator.vue'
@@ -339,7 +358,10 @@ export default {
       ],
       useBlockHash: true,
       canary: {},
+      hash: '',
       error: '',
+      canaryIsNew: true,
+      fetchHashError: false,
     }
   },
   computed: {
@@ -356,36 +378,25 @@ export default {
   methods: {
     async sign() {
       try {
-        // Validate keys
-        try {
-          await ed.getPublicKey(this.signKey)
-        } catch (e) {
-          console.log(e)
-          this.$notify({
-            group: 'foo',
-            type: 'error',
-            title: 'Error',
-            text: 'The private sign key is invalid.',
-          })
-          return
-        }
         // Define keys
         let publicKey = null
         if (this.securityLevel === 'medium') {
           // Public key for sign key
-          let publicKey = await ed.getPublicKey(this.signKey)
+          publicKey = await ed.getPublicKey(this.signKey)
           publicKey = bytesToBase64(publicKey)
         }
         // Define canary
         let canary = {
           claims: {},
         }
+        //Defin claims
         let claims = {}
-        claims.domain = this.domain
+        claims.domain = this.domain.toLowerCase()
         if (publicKey) claims.pubkey = publicKey
         if (this.newpubkey) claims.newpubkey = this.newpubkey
         if (this.panickey) claims.panickey = this.panickey
         if (this.newpanickey) claims.newpanickey = this.newpanickey
+        if (this.hash && this.useBlockHash) claims.freshness = this.hash
         claims.version = '' + this.version
         claims.release = this.ISODateString(new Date())
         claims.expiry = this.ISODateString(new Date(this.expiry))
@@ -396,35 +407,30 @@ export default {
           .filter((c) => {
             return !this.codes.includes(c)
           })
-        // //freshness: '',
+
         canary.claims = claims
         // Define signatures
         let signatures = {}
         if (this.securityLevel === 'medium') {
-          console.log(claims)
           await this.asyncForEach(Object.entries(claims), async (c) => {
             const [key, value] = c
             let signature = await ed.sign(value, this.signKey)
             signatures[`signed_${key}`] = bytesToBase64(signature)
           })
         }
-        // let signatures = {
-        //   signed_domain: '',
-        //   signed_pubkey: '',
-        //   signed_newpubkey: '',
-        //   signed_panickey: '',
-        //   signed_newpanickey: '',
-        //   signed_version: '',
-        //   signed_release: '',
-        //   signed_expiry: '',
-        //   signed_freshness: '',
-        //   signed_codes: '',
-        // }
         canary.signatures = signatures
+
+        // Update canary
         this.canary = Object.assign({}, { canary: canary })
         this.step = 2
       } catch (e) {
         console.log(e)
+        this.$notify({
+          group: 'foo',
+          type: 'error',
+          title: 'Error',
+          text: e,
+        })
       }
     },
     remove(item) {
@@ -454,24 +460,28 @@ export default {
         await callback(array[index], index, array)
       }
     },
+    getLatestHash() {
+      var request = new XMLHttpRequest()
+
+      request.open('GET', 'https://blockchain.info/q/latesthash')
+
+      request.onreadystatechange = () => {
+        if (request.readyState === 4) {
+          if (request.status === 200) {
+            this.hash = request.responseText
+          } else {
+            this.fetchHashError = true
+          }
+        }
+      }
+      request.send()
+    },
+  },
+  async mounted() {
+    this.getLatestHash()
   },
 }
 </script>
 
 <style>
-.jsoneditor-menu {
-  background-color: var(--v-primary-base);
-  border-bottom: 1px solid var(--v-primary-base);
-}
-.jsoneditor-poweredBy,
-.jsoneditor-transform,
-.jsoneditor-repair {
-  display: none;
-}
-.jsoneditor-mode-code {
-  border: none;
-}
-.ace_content {
-  font-size: 1.2em;
-}
 </style>

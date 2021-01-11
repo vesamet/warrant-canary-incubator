@@ -10,7 +10,7 @@
           >warrant canaries</LinkText
         >
         in compliance with
-        <LinkText link="https://canarytail.org">CanaryTrail</LinkText> standard.
+        <LinkText link="https://canarytail.org">CanaryTail</LinkText> standard.
       </p>
     </div>
   </div>

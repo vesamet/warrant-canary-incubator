@@ -1,0 +1,19 @@
+/* Json editor custom styling */
+.jsoneditor-menu {
+    background-color: var(--v-primary-base);
+    border-bottom: 1px solid var(--v-primary-base);
+  }
+  .jsoneditor-poweredBy,
+  .jsoneditor-transform,
+  .jsoneditor-repair {
+    display: none;
+  }
+  .jsoneditor-mode-code {
+    border: none;
+  }
+  /* .ace_content {
+    font-size: 1em;
+  } */
+  .jsoneditor-statusbar span {
+    display: none;
+  }

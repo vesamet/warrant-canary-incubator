@@ -1,6 +1,6 @@
 <template>
     <div class="main-footer">
-<span class="separator">▞</span> Created by <LinkText>Gwenaël Guyot</LinkText> for CanaryTrail <span class="separator">░</span> <a href="#"><v-icon small color="primary" class="mr-2 github-btn">mdi-github</v-icon></a>
+<span class="separator">▞</span> Created by <LinkText>Gwenaël Guyot</LinkText> for CanaryTail <span class="separator">░</span> <a href="#"><v-icon small color="primary" class="mr-2 github-btn">mdi-github</v-icon></a>
     </div>
 </template>
 

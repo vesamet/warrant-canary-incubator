@@ -3,7 +3,7 @@
 
   
 
-A tool to sign & validate [warrant canaries](https://en.wikipedia.org/wiki/Warrant_canary) in compliance with [CanaryTrail](https://canarytail.org/) standard.
+A tool to sign & validate [warrant canaries](https://en.wikipedia.org/wiki/Warrant_canary) in compliance with [CanaryTail](https://canarytail.org/) standard.
 
 You can use it here [here](https://vesamet.github.io/warrant-canary-incubator).
 

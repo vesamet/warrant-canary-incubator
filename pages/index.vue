@@ -2,29 +2,29 @@
   <v-row justify="center" align="center" class="mb-0 mt-5 pa-0">
     <v-col cols="12">
       <v-row class="mb-3" justify="center" align="center">
-        <v-col cols="5" class="text-center">
+        <v-col cols="12" md="5" class="text-center">
           <v-btn
             color="black"
             class="action-button mt-5"
             @click="$router.push({ path: '/validate' })"
           >
-            <Title class="px-2" dark bg="transparent">Validate</Title>
-          </v-btn>
+            <Title class="px-2" dark bg="transparent">Validate</Title> </v-btn
+          ><br />
           <img
             src="@/assets/img/canary-read.png"
             alt="Image of a canary intercepting a warrant canary."
             class="action-image-read"
           />
         </v-col>
-        <v-col cols="5" class="text-center">
+        <v-col cols="12" md="5" class="text-center">
           <img
             src="@/assets/img/canary-create.png"
             alt="Image of a canary writing a warrant canary."
             class="action-image-create"
-          />
+          /><br />
           <v-btn
             color="black"
-              class="action-button mt-5"
+            class="action-button mt-5"
             @click="$router.push({ path: '/sign' })"
           >
             <Title class="px-2" dark bg="transparent">Sign</Title>
