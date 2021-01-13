@@ -49,10 +49,13 @@
           </p>
           <p>
             <strong :class="validated.threat.length ? 'error--text' : ''"
-              >░ Codes/Threat status: </strong
+              >░ Threat status: </strong
             ><v-icon v-if="validated.threat.length > 0" color="error"
               >mdi-alert-decagram</v-icon
             >
+            <span v-if="!validated.threat.length"
+              > None triggered <v-icon color="green">mdi-check-circle</v-icon>
+            </span>
             <span
               v-if="validated.threat.length > 0"
               class="error--text pb-1 d-inline-block ml-3"
