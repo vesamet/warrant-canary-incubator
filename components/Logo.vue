@@ -29,15 +29,17 @@ export default {}
   max-width: 100%;
 }
 
-/**
-position: absolute;
-top: 12px;
-left: 7px;
-width: 120px;
-height: 120px;
-background-color: var(--v-info-base);
-padding: 22px;
-    padding-top: 22px;
-padding-top: 17px;
-*/
+@media only screen and (max-width: 924px) {
+  .logo-box {
+  position: initial;
+  padding: 10px;
+  padding-top: 23px;
+  padding-bottom: 15px;
+  text-align: center;
+  margin: auto;
+  }
+  .logo {
+    max-width: 70%;
+  }
+}
 </style>

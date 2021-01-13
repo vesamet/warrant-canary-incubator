@@ -10,7 +10,12 @@
         </div>
         <Footer />
       </v-container>
-      <notifications group="foo" position="bottom center" :duration="7000" classes="vue-notification mb-12"/>
+      <notifications
+        group="foo"
+        position="bottom center"
+        :duration="7000"
+        classes="vue-notification mb-12"
+      />
     </v-main>
   </v-app>
 </template>
@@ -48,6 +53,13 @@ html {
   padding: 0 !important;
   background-color: var(--v-primary-base);
 }
+
+@media only screen and (max-width: 924px) {
+  .main-container {
+    margin-top: 0px;
+  }
+}
+
 .fade-enter-active,
 .fade-leave-active {
   transition: opacity 0.5s;

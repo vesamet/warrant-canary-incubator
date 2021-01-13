@@ -38,25 +38,85 @@
             >
           </p>
           <p><strong>░ Release:</strong> {{ validated.release }}</p>
-          <p><strong>░ Expiry:</strong> {{ validated.expiry }}</p>
-          <p><strong>░ Codes/Threat status:</strong> <br /><strong v-if="validated.threat.length > 0 " class="error--text">The following threats have been triggered:</strong><br>
-          <span v-for="threat in validated.threat" :key="threat.value"><span class="error--text">▙</span> {{threat.text}}<br/></span>
+          <p>
+            <strong :class="validated.expired ? 'error--text' : ''">
+              ░ Expiry:</strong
+            >
+            {{ validated.expiry }}
+            <span v-if="validated.expired" class="error--text">
+              <v-icon color="error">mdi-alert-decagram</v-icon></span
+            >
+          </p>
+          <p>
+            <strong :class="validated.threat.length ? 'error--text' : ''"
+              >░ Codes/Threat status: </strong
+            ><v-icon v-if="validated.threat.length > 0" color="error"
+              >mdi-alert-decagram</v-icon
+            >
+            <span
+              v-if="validated.threat.length > 0"
+              class="error--text pb-1 d-inline-block ml-3"
+              style="font-size: 0.9em"
+              >These threats have been triggered:</span
+            ><br />
+            <span v-for="threat in validated.threat" :key="threat.value"
+              ><span class="error--text d-inline-block ml-3">▙</span>
+              {{ threat.text }}<br
+            /></span>
           </p>
           <v-divider class="my-3 black"></v-divider>
           <p>
-            <strong>░ Public key:</strong> <code>{{ validated.pubkey }}</code>
+            <strong>░ Public key: </strong>
+            <v-icon
+              color="primary"
+              @click="viewPubKey = !viewPubKey"
+              class="float-right"
+              >{{ viewPubKey ? 'mdi-eye-off' : 'mdi-eye' }}</v-icon
+            >
+            <code v-if="viewPubKey">{{ validated.pubkey }}</code>
           </p>
           <p v-if="validated.newpubkey">
-            <strong>░ New public key:</strong>
-            <code>{{ validated.newpubkey }}</code>
+            <strong>░ New public key: </strong>
+            <v-icon
+              color="secondary"
+              @click="viewNewPubKey = !viewNewPubKey"
+              class="float-right"
+              >{{ viewNewPubKey ? 'mdi-eye' : 'mdi-eye-off' }}</v-icon
+            >
+            <code v-if="viewNewPubKey">{{ validated.newpubkey }}</code>
           </p>
           <p v-if="validated.panickey">
-            <strong>░ Panic key:</strong> <code>{{ validated.panickey }}</code>
+            <strong>░ Panic key: </strong>
+            <v-icon
+              color="primary"
+              @click="viewPanicKey = !viewPanicKey"
+              class="float-right"
+              >{{ viewPanicKey ? 'mdi-eye-off' : 'mdi-eye' }}</v-icon
+            >
+            <code v-if="viewPanicKey">{{ validated.panickey }}</code>
           </p>
           <p v-if="validated.newpanickey">
-            <strong>░ New panic key:</strong>
-            <code>{{ validated.newpanickey }}</code>
+            <strong>░ New panic key: </strong>
+            <v-icon
+              color="primary"
+              @click="viewNewPanicKey = !viewNewPanicKey"
+              class="float-right"
+              >{{ viewNewPanicKey ? 'mdi-eye-off' : 'mdi-eye' }}</v-icon
+            >
+            <code v-if="viewNewPanicKey">{{ validated.newpanickey }}</code>
           </p>
+          <v-btn
+            small
+            color="info"
+            class="edit-btn"
+            fab
+            absolute
+            top
+            right
+            @click="edit()"
+          >
+            <v-icon color="black">mdi-pencil</v-icon>
+          </v-btn>
         </div>
       </v-card>
     </v-col>
@@ -64,6 +124,7 @@
 </template>
 
 <script>
+import { mapMutations } from 'vuex'
 import '@/assets/jsonEditorTheme.js'
 import '@/assets/jsonEditorCustomStyle.css'
 import Title from '@/components/Title.vue'
@@ -79,9 +140,14 @@ export default {
     return {
       canary: {},
       validated: false,
+      viewPubKey: false,
+      viewNewPubKey: false,
+      viewPanicKey: false,
+      viewNewPanicKey: false,
     }
   },
   methods: {
+    ...mapMutations(['setPassingCanary']),
     validate() {
       let parsedJson = null
       if (!this.canary.canary) {
@@ -113,7 +179,13 @@ export default {
       let threat = availableCodes.filter((c) => {
         return !codes.includes(c.value)
       })
-      // Validate the canary
+
+      // Check if canary is expired:
+      let expired = false
+      if (new Date() > Date.parse(this.canary?.canary?.claims?.expiry)) {
+        expired = true
+      }
+      // Format the canary
       this.validated = {
         domain: this.canary?.canary?.claims?.domain,
         pubkey: this.canary?.canary?.claims?.pubkey,
@@ -123,6 +195,7 @@ export default {
         freshness: this.canary?.canary?.claims?.freshness,
         release: this.canary?.canary?.claims?.release,
         expiry: this.canary?.canary?.claims?.expiry,
+        expired: expired,
         version: this.canary?.canary?.claims?.version,
         threat: threat,
       }
@@ -149,6 +222,10 @@ export default {
       }
       this.canary = parsedUpload
     },
+    edit() {
+      this.setPassingCanary(this.validated)
+      this.$router.push({ path: '/sign' })
+    },
   },
 }
 </script>
@@ -156,6 +233,7 @@ export default {
 <style scoped>
 .json-card {
   position: relative;
+  overflow-x: auto;
 }
 .validate-btn {
   position: absolute;
@@ -163,6 +241,10 @@ export default {
   left: 50%;
   transform: translateX(-50%);
   z-index: 2;
+}
+.edit-btn {
+  margin-right: -35px;
+  margin-top: 40px;
 }
 code {
   overflow: auto;

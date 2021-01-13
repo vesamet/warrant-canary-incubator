@@ -47,4 +47,12 @@ h1 span {
   margin-left: 150px;
   margin-right: 50px;
 }
+
+@media only screen and (max-width: 924px) {
+  .tabbed {
+  margin-left: 10px;
+  margin-right: 10px;
+  padding-bottom: 10px;
+  }
+}
 </style>

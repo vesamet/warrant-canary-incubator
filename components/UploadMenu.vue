@@ -40,7 +40,7 @@
         <v-btn @click="isOpen = false" text class="mx-3 black--text" small
           >Cancel</v-btn
         >
-        <v-btn @click="onUpload()" color="primary" class="mx-3" small
+        <v-btn @click="onUpload()" :disabled="!file" color="primary" light class="mx-3" small
           >Upload</v-btn
         >
       </div>

@@ -40,8 +40,7 @@
                       dense
                       hint="This key is used for signing the canary itself to prove authenticity."
                       :rules="[(v) => !!v || 'A sign key is required.']"
-                      class="d-inline-block mr-2 mb-0"
-                      style="width: 80%"
+                      class="d-inline-block mr-2 mb-0 key-field"
                       placeholder="Y4PsjneDjxckrgibojs38VDWFBTyvlVtTQR3Z9RTRw0="
                     />
                     <span style="width: 20%"
@@ -59,9 +58,8 @@
                       label="New sign key"
                       color="secondary"
                       type="password"
-                      class="d-inline-block mr-2 mb-2"
+                      class="d-inline-block mr-2 mb-2 key-field"
                       prepend-inner-icon="mdi-key"
-                      style="width: 80%"
                       hint="Specifies the expected replacement public key (if any) tied to the entity for any future signatures."
                       dense
                       placeholder="(optional)"
@@ -137,8 +135,7 @@
                       label="Panic key"
                       color="secondary"
                       type="password"
-                      style="width: 80%"
-                      class="d-inline-block mr-2 mb-2"
+                      class="d-inline-block mr-2 mb-2 key-field"
                       hint="Specifies the public key (if any) that can trigger the canary simply by being signed by it. 
                     This is used when the party wishes to end the canary for whatever reason."
                       prepend-inner-icon="mdi-key-star"
@@ -158,8 +155,7 @@
                       prepend-inner-icon="mdi-key-star"
                       label="New panic key"
                       type="password"
-                      style="width: 80%"
-                      class="d-inline-block mr-2 mb-2"
+                      class="d-inline-block mr-2 mb-2 key-field"
                       color="secondary"
                       dense
                       hint="Specifies the replacement public panic key (if any) for any future signatures."
@@ -240,7 +236,7 @@
                 </transition>
               </v-row>
               <p style="font-size: 0.9em" class="mb-0">
-                For you privacy, keys are not stored anywhere online or
+                For your privacy, keys are not stored anywhere online or
                 locally.<br />
                 Key manipulations are entirely done in your browser.
               </p>
@@ -305,6 +301,7 @@
 </template>
 
 <script>
+import { mapMutations, mapState } from 'vuex'
 import * as ed from 'noble-ed25519'
 import { bytesToBase64 } from '@/utils/base64'
 import '@/assets/jsonEditorTheme.js'
@@ -365,6 +362,7 @@ export default {
     }
   },
   computed: {
+    ...mapState(['passingCanary']),
     stringifiedCanary() {
       return JSON.stringify(this.canary)
     },
@@ -376,6 +374,7 @@ export default {
     },
   },
   methods: {
+    ...mapMutations(['setPassingCanary']),
     async sign() {
       try {
         // Define keys
@@ -478,10 +477,34 @@ export default {
     },
   },
   async mounted() {
+    if (this.passingCanary?.domain) {
+      let c = this.passingCanary
+      this.domain = c.domain
+      if (c.pubkey) this.pubkey = c.pubkey
+      if (c.newpubkey) this.newpubkey = c.newpubkey
+      if (c.panickey) this.panickey = c.panickey
+      if (c.newpanickey) this.newpanickey = c.newpanickey
+      this.version = Number(c.version)
+      this.release = ''
+      this.expiry = c.expiry.split('T')[0]
+      if (c.threat.length > 0) this.triggered = true
+      this.codes = c.threat.map((c) => c.value)
+      console.log(Number(c.version))
+    }
+    this.setPassingCanary({})
     this.getLatestHash()
   },
 }
 </script>
 
 <style>
+.key-field {
+  width: 80%;
+}
+
+@media only screen and (max-width: 924px) {
+  .key-field {
+    width: 70%;
+  }
+}
 </style>
