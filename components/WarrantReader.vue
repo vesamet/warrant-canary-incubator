@@ -53,8 +53,8 @@
             ><v-icon v-if="validated.threat.length > 0" color="error"
               >mdi-alert-decagram</v-icon
             >
-            <span v-if="!validated.threat.length"
-              > None triggered <v-icon color="green">mdi-check-circle</v-icon>
+            <span v-if="!validated.threat.length">
+              None triggered <v-icon color="green">mdi-check-circle</v-icon>
             </span>
             <span
               v-if="validated.threat.length > 0"
@@ -69,14 +69,14 @@
           </p>
           <v-divider class="my-3 black"></v-divider>
           <p>
-            <strong>░ Public key: </strong>
+            <strong>░ Public keys: </strong>
             <v-icon
               color="primary"
-              @click="viewPubKey = !viewPubKey"
+              @click="viewPubKeys = !viewPubKeys"
               class="float-right"
-              >{{ viewPubKey ? 'mdi-eye-off' : 'mdi-eye' }}</v-icon
+              >{{ viewPubKeys ? 'mdi-eye-off' : 'mdi-eye' }}</v-icon
             >
-            <code v-if="viewPubKey">{{ validated.pubkey }}</code>
+            <code v-if="viewPubKeys">{{ validated.pubkeys }}</code>
           </p>
           <p v-if="validated.newpubkey">
             <strong>░ New public key: </strong>
@@ -127,6 +127,8 @@
 </template>
 
 <script>
+import * as ed from 'noble-ed25519'
+import { encode, decode, decodeToUint8Array } from '@/utils/base64'
 import { mapMutations } from 'vuex'
 import '@/assets/jsonEditorTheme.js'
 import '@/assets/jsonEditorCustomStyle.css'
@@ -143,16 +145,13 @@ export default {
     return {
       canary: {},
       validated: false,
-      viewPubKey: false,
-      viewNewPubKey: false,
+      viewPubKeys: false,
       viewPanicKey: false,
-      viewNewPanicKey: false,
     }
   },
   methods: {
     ...mapMutations(['setPassingCanary']),
-    validate() {
-      let parsedJson = null
+    async validate() {
       if (!this.canary.canary) {
         this.$notify({
           group: 'foo',
@@ -162,6 +161,36 @@ export default {
         })
         return
       }
+
+      // Define signatures state
+      let signaturesState = []
+      let signaturesObject = this.canary?.canary?.signatures
+      console.log(signaturesObject)
+      if (signaturesObject) {
+        await this.asyncForEach(
+          Object.entries(signaturesObject),
+          async (entry) => {
+            const [publicKey, signatures] = entry
+            let isValid = true
+            await this.asyncForEach(
+              Object.entries(signatures),
+              async (entry) => {
+                const [property, signature] = entry
+                let propertyContent = this.canary?.canary?.claims[property.replace('signed_','')]
+                console.log(decodeToUint8Array(publicKey))
+                console.log(String(propertyContent))  
+                 let isSigned = await ed.verify(decode(signature), String(propertyContent), decodeToUint8Array(publicKey));
+                 console.log(isSigned)
+                 console.log( await ed.verify(decode(signature), String(propertyContent), decodeToUint8Array(publicKey)))
+                 if(!isSigned) isValid = false
+              }
+            )
+          }
+        )
+      }
+
+      //TODO: Check if one of the signatures is the panick key
+
       //Define threat level
       let availableCodes = [
         { text: 'Warrants', value: 'war' },
@@ -191,10 +220,8 @@ export default {
       // Format the canary
       this.validated = {
         domain: this.canary?.canary?.claims?.domain,
-        pubkey: this.canary?.canary?.claims?.pubkey,
-        newpubkey: this.canary?.canary?.claims?.newpubkey,
+        pubkeys: this.canary?.canary?.claims?.pubkeys,
         panickey: this.canary?.canary?.claims?.panickey,
-        newpanickey: this.canary?.canary?.claims?.newpanickey,
         freshness: this.canary?.canary?.claims?.freshness,
         release: this.canary?.canary?.claims?.release,
         expiry: this.canary?.canary?.claims?.expiry,
@@ -228,6 +255,11 @@ export default {
     edit() {
       this.setPassingCanary(this.validated)
       this.$router.push({ path: '/sign' })
+    },
+    async asyncForEach(array, callback) {
+      for (let index = 0; index < array.length; index++) {
+        await callback(array[index], index, array)
+      }
     },
   },
 }

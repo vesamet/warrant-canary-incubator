@@ -60,8 +60,15 @@
         <v-btn @click="clear()" color="info" class="black--text mx-3" small
           >Clear</v-btn
         >
-        <v-btn @click="isOpen = false" color="primary" class="mx-3" small
-          >Done</v-btn
+        <v-btn
+          @click="
+            isOpen = false
+            $emit('onClose')
+          "
+          color="primary"
+          class="mx-3"
+          small
+          >{{ closeLabel }}</v-btn
         >
       </div>
     </v-card>
@@ -70,8 +77,8 @@
 
 <script>
 import * as ed from 'noble-ed25519'
+import { encode, decode, decodeToUint8Array } from '@/utils/base64'
 import Title from '@/components/Title.vue'
-import { bytesToBase64 } from '@/utils/base64'
 export default {
   props: {
     privateKey: {
@@ -86,6 +93,10 @@ export default {
       type: Boolean,
       default: true,
     },
+    closeLabel: {
+      type: String,
+      default: 'Done',
+    },
   },
   components: {
     Title,
@@ -97,15 +108,19 @@ export default {
   },
   methods: {
     async generateKeyPair() {
-      let newPrivateKey = bytesToBase64(ed.utils.randomPrivateKey())
+      let newPrivateKey = ed.utils.randomPrivateKey()
+      console.log(newPrivateKey)
+      newPrivateKey = encode(newPrivateKey)
       this.$emit('update:privateKey', newPrivateKey)
-      let newPublicKey = await ed.getPublicKey(newPrivateKey)
-      this.$emit('update:publicKey', bytesToBase64(newPublicKey))
+      let newPublicKey = await ed.getPublicKey(decodeToUint8Array(newPrivateKey))
+      console.log(newPublicKey)
+      this.$emit('update:publicKey', encode(newPublicKey))
     },
     async renewPublicKey() {
       if (this.privateKey) {
-        let newPublicKey = await ed.getPublicKey(this.privateKey)
-        this.$emit('update:publicKey', bytesToBase64(newPublicKey))
+        let newPublicKey = await ed.getPublicKey(decodeToUint8Array(this.privateKey))
+        console.log(newPublicKey)
+        this.$emit('update:publicKey', encode(newPublicKey))
       }
     },
     clear() {

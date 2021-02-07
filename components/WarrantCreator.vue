@@ -30,47 +30,53 @@
                     This is used for simplistic TLS/SSL certificate verification of authenticity as well."
                     placeholder="www.cryptanalys.is"
                   />
-                  <div v-if="securityLevel === 'medium'" class="mb-3">
-                    <v-text-field
-                      v-model="signKey"
-                      label="Private key for signing*"
-                      color="secondary"
-                      type="password"
-                      prepend-inner-icon="mdi-key"
-                      dense
-                      hint="This key is used for signing the canary itself to prove authenticity."
-                      :rules="[(v) => !!v || 'A sign key is required.']"
+                  <div v-if="securityLevel === 'medium'" class="mb-6">
+                    <v-autocomplete
                       class="d-inline-block mr-2 mb-0 key-field"
-                      placeholder="Y4PsjneDjxckrgibojs38VDWFBTyvlVtTQR3Z9RTRw0="
-                    />
-                    <span style="width: 20%"
-                      ><KeyGenerator
-                        :privateKey="signKey"
-                        :publicKey="pubkey"
-                        :isOptional="false"
-                        @update:publicKey="(k) => (pubkey = k)"
-                        @update:privateKey="(k) => (signKey = k)"
-                      />
-                    </span>
-                    <v-text-field
-                      v-if="!canaryIsNew"
-                      v-model="newpubkey"
-                      label="New sign key"
+                      label="Private keys for signing*"
                       color="secondary"
-                      type="password"
-                      class="d-inline-block mr-2 mb-2 key-field"
-                      prepend-inner-icon="mdi-key"
-                      hint="Specifies the expected replacement public key (if any) tied to the entity for any future signatures."
+                      v-model="signKeys"
+                      :items="signKeys"
+                      return-object
+                      clearable
+                      :item-text="
+                        (item) =>
+                          `${
+                            item.public ? item.public.substring(0, 16) : ''
+                          }...`
+                      "
+                      deletable-chips
+                      multiple
                       dense
-                      placeholder="(optional)"
-                    />
+                      no-data-text="These keys are used for signing the canary itself to prove authenticity."
+                      :rules="[
+                        (v) =>
+                          v.length > 0 || 'At least one sign key is required.',
+                      ]"
+                      prepend-inner-icon="mdi-key"
+                    >
+                      <template v-slot:selection="data">
+                        <v-chip
+                          v-bind="data.attrs"
+                          :input-value="data.selected"
+                          close
+                          small
+                          @click="data.select"
+                          @click:close="removeSignKey(data.item)"
+                        >
+                          {{ data.item.public.substring(0, 8) }}...
+                        </v-chip>
+                      </template>
+                    </v-autocomplete>
                     <span style="width: 20%"
                       ><KeyGenerator
-                        v-if="!canaryIsNew"
-                        :privateKey="newSignKey"
-                        :publicKey="newpubkey"
-                        @update:publicKey="(k) => (newpubkey = k)"
-                        @update:privateKey="(k) => (newSignKey = k)"
+                        :privateKey="signKeyToAdd"
+                        :publicKey="pubKeyToAdd"
+                        :isOptional="false"
+                        @update:publicKey="(k) => (pubKeyToAdd = k)"
+                        @update:privateKey="(k) => (signKeyToAdd = k)"
+                        @onClose="addSignKey"
+                        closeLabel="Add key or close"
                       />
                     </span>
                   </div>
@@ -124,7 +130,7 @@
                     :items="securityLevels"
                     label="Security level"
                     color="secondary"
-                    prepend-inner-icon="mdi-label-variant"
+                    prepend-inner-icon="mdi-label-letiant"
                     dense
                     class="mb-2"
                     placeholder="(optional)"
@@ -150,32 +156,13 @@
                         @update:privateKey="(k) => (privatePanicKey = k)"
                       />
                     </span>
-                    <v-text-field
-                      v-model="newpanickey"
-                      prepend-inner-icon="mdi-key-star"
-                      label="New panic key"
-                      type="password"
-                      class="d-inline-block mr-2 mb-2 key-field"
-                      color="secondary"
-                      dense
-                      hint="Specifies the replacement public panic key (if any) for any future signatures."
-                      placeholder="(optional)"
-                    />
-                    <span style="width: 20%"
-                      ><KeyGenerator
-                        :privateKey="privateNewPanicKey"
-                        :publicKey="newpanickey"
-                        @update:publicKey="(k) => (newpanickey = k)"
-                        @update:privateKey="(k) => (privateNewPanicKey = k)"
-                      />
-                    </span>
                   </div>
                   <v-autocomplete
                     v-model="version"
                     :items="[{ text: 'v0.1', value: 0.1 }]"
                     label="Version"
                     color="secondary"
-                    prepend-inner-icon="mdi-label-variant"
+                    prepend-inner-icon="mdi-label-letiant"
                     dense
                     class="mb-2"
                     placeholder="(optional)"
@@ -302,8 +289,8 @@
 
 <script>
 import { mapMutations, mapState } from 'vuex'
+import { encode, decode, decodeToUint8Array } from '@/utils/base64'
 import * as ed from 'noble-ed25519'
-import { bytesToBase64 } from '@/utils/base64'
 import '@/assets/jsonEditorTheme.js'
 import '@/assets/jsonEditorCustomStyle.css'
 
@@ -317,10 +304,8 @@ export default {
       loading: false,
       step: 1,
       domain: '',
-      pubkey: '',
-      newpubkey: '',
+      pubkeys: [],
       panickey: '',
-      newpanickey: '',
       version: 0.1,
       release: '',
       expiry: '',
@@ -343,10 +328,10 @@ export default {
       ],
       dateMenu: false,
       triggered: false,
-      signKey: '',
-      newSignKey: '',
+      signKeys: [],
+      signKeyToAdd: '',
+      pubKeyToAdd: '',
       privatePanicKey: '',
-      privateNewPanicKey: '',
       securityLevel: 'medium',
       securityLevels: [
         { text: 'Low', value: 'low' },
@@ -377,12 +362,11 @@ export default {
     ...mapMutations(['setPassingCanary']),
     async sign() {
       try {
-        // Define keys
-        let publicKey = null
+        // Define public keys
+        let publicKeys = null
         if (this.securityLevel === 'medium') {
           // Public key for sign key
-          publicKey = await ed.getPublicKey(this.signKey)
-          publicKey = bytesToBase64(publicKey)
+          publicKeys = this.signKeys.map((k) => k.public)
         }
         // Define canary
         let canary = {
@@ -391,10 +375,8 @@ export default {
         //Defin claims
         let claims = {}
         claims.domain = this.domain.toLowerCase()
-        if (publicKey) claims.pubkey = publicKey
-        if (this.newpubkey) claims.newpubkey = this.newpubkey
+        if (publicKeys.length) claims.pubkeys = publicKeys
         if (this.panickey) claims.panickey = this.panickey
-        if (this.newpanickey) claims.newpanickey = this.newpanickey
         if (this.hash && this.useBlockHash) claims.freshness = this.hash
         claims.version = '' + this.version
         claims.release = this.ISODateString(new Date())
@@ -408,16 +390,23 @@ export default {
           })
 
         canary.claims = claims
-        // Define signatures
-        let signatures = {}
+        //Define signatures
         if (this.securityLevel === 'medium') {
-          await this.asyncForEach(Object.entries(claims), async (c) => {
-            const [key, value] = c
-            let signature = await ed.sign(value, this.signKey)
-            signatures[`signed_${key}`] = bytesToBase64(signature)
+          let publicKeySignatures = {}
+          await this.asyncForEach(this.signKeys, async (signKey) => {
+            let signatures = {}
+            await this.asyncForEach(Object.entries(claims), async (c) => {
+              const [key, value] = c
+              let signature = await ed.sign(
+                String(value),
+                decodeToUint8Array(signKey.private)
+              )
+              signatures[`signed_${key}`] = encode(signature)
+            })
+            publicKeySignatures[signKey.public] = signatures
           })
+          canary.signatures = publicKeySignatures
         }
-        canary.signatures = signatures
 
         // Update canary
         this.canary = Object.assign({}, { canary: canary })
@@ -434,6 +423,28 @@ export default {
     },
     remove(item) {
       this.codes = this.codes.filter((c) => c !== item.value)
+    },
+    async addSignKey() {
+      if (!this.signKeyToAdd) return
+      if (!this.pubKeyToAdd) {
+        let publicKey = await ed.getPublicKey(
+          decodeToUint8Array(this.signKeyToAdd)
+        )
+        this.pubKeyToAdd = encode(publicKey)
+      }
+      this.removeSignKey({
+        public: this.signKeyToAdd,
+        private: this.pubKeyToAdd,
+      })
+      this.signKeys.push({
+        public: this.signKeyToAdd,
+        private: this.pubKeyToAdd,
+      })
+      this.signKeyToAdd = ''
+      this.pubKeyToAdd = ''
+    },
+    removeSignKey(item) {
+      this.signKeys = this.signKeys.filter((c) => c.private !== item.private)
     },
     ISODateString(d) {
       function pad(n) {
@@ -460,7 +471,7 @@ export default {
       }
     },
     getLatestHash() {
-      var request = new XMLHttpRequest()
+      let request = new XMLHttpRequest()
 
       request.open('GET', 'https://blockchain.info/q/latesthash')
 
@@ -481,9 +492,7 @@ export default {
       let c = this.passingCanary
       this.domain = c.domain
       if (c.pubkey) this.pubkey = c.pubkey
-      if (c.newpubkey) this.newpubkey = c.newpubkey
       if (c.panickey) this.panickey = c.panickey
-      if (c.newpanickey) this.newpanickey = c.newpanickey
       this.version = Number(c.version)
       this.release = ''
       this.expiry = c.expiry.split('T')[0]
@@ -493,6 +502,43 @@ export default {
     }
     this.setPassingCanary({})
     this.getLatestHash()
+
+    console.log('--------------')
+    console.log('--------------')
+    const privateKey = ed.utils.randomPrivateKey() // 32-byte Uint8Array or string.
+    const msgHash =
+      'deadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeef'
+    const publicKey = await ed.getPublicKey(privateKey)
+    console.log('private key original:')
+    console.log(privateKey)
+    console.log('private key encrypted:')
+    let privateKeyEncrypted = encode(privateKey)
+    console.log(privateKeyEncrypted)
+    console.log(decodeToUint8Array(privateKeyEncrypted))
+    console.log('public key original:')
+    console.log(publicKey)
+    console.log('private key encrypted:')
+    let publicKeyEncrypted = encode(publicKey)
+    console.log(publicKeyEncrypted)
+    console.log(decodeToUint8Array(publicKeyEncrypted))
+    console.log('msg original:')
+    console.log(msgHash)
+    console.log('msg encrypted:')
+    let encryptedMsgHash = encode(msgHash)
+    console.log(encryptedMsgHash)
+    console.log(decode(encryptedMsgHash))
+    const signature = await ed.sign(msgHash, privateKey)
+    console.log('signature original:')
+    console.log(signature)
+
+    const isSigned = await ed.verify(
+      decode(encode(signature)),
+      decode(encode(msgHash)),
+      decodeToUint8Array(encode(publicKey))
+    )
+    console.log('is Signed: ' + isSigned)
+    console.log('--------------')
+    console.log('--------------')
   },
 }
 </script>
