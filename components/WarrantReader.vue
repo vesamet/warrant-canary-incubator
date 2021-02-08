@@ -167,7 +167,7 @@ export default {
       // Define signatures state
       let signaturesState = []
       let allKeysValid = true
-      let signaturesObject = this.canary?.canary?.signatures
+      let signaturesObject = this.canary?.signatures
       if (signaturesObject) {
         await this.asyncForEach(
           Object.entries(signaturesObject),
@@ -178,9 +178,7 @@ export default {
               Object.entries(signatures),
               async (entry) => {
                 const [property, signature] = entry
-                let propertyContent = this.canary?.canary?.claims[
-                  property.replace('signed_', '')
-                ]
+                let propertyContent = this.canary?.canary[property]
                 let isSigned = await ed.verify(
                   decode(signature),
                   String(propertyContent),
@@ -195,7 +193,6 @@ export default {
             signaturesState.push({ publicKey: publicKey, isValid: isValid })
           }
         )
-        console.log(signaturesState)
       }
 
       //TODO: Check if one of the signatures is the panick key
@@ -216,27 +213,27 @@ export default {
         { text: 'Compromised credentials', value: 'xcred' },
         { text: 'Compromised operations', value: 'xopers' },
       ]
-      let codes = this.canary?.canary?.claims?.codes || []
+      let codes = this.canary?.canary?.codes || []
       let threat = availableCodes.filter((c) => {
         return !codes.includes(c.value)
       })
 
       // Check if canary is expired:
       let expired = false
-      if (new Date() > Date.parse(this.canary?.canary?.claims?.expiry)) {
+      if (new Date() > Date.parse(this.canary?.canary?.expiry)) {
         expired = true
       }
       // Format the canary
       this.validated = {
-        domain: this.canary?.canary?.claims?.domain,
+        domain: this.canary?.canary?.domain,
         pubkeys: signaturesState.length > 0 ? signaturesState : [],
         allKeysValid: allKeysValid,
-        panickey: this.canary?.canary?.claims?.panickey,
-        freshness: this.canary?.canary?.claims?.freshness,
-        release: this.canary?.canary?.claims?.release,
-        expiry: this.canary?.canary?.claims?.expiry,
+        panickey: this.canary?.canary?.panickey,
+        freshness: this.canary?.canary?.freshness,
+        release: this.canary?.canary?.release,
+        expiry: this.canary?.canary?.expiry,
         expired: expired,
-        version: this.canary?.canary?.claims?.version,
+        version: this.canary?.canary?.version,
         threat: threat,
       }
       this.$notify({

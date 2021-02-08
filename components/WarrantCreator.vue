@@ -370,7 +370,6 @@ export default {
         }
         // Define canary
         let canary = {
-          claims: {},
         }
         //Defin claims
         let claims = {}
@@ -389,7 +388,7 @@ export default {
             return !this.codes.includes(c)
           })
 
-        canary.claims = claims
+        canary.canary = claims
         //Define signatures
         if (this.securityLevel === 'medium') {
           let publicKeySignatures = {}
@@ -401,7 +400,7 @@ export default {
                 String(value),
                 decodeToUint8Array(signKey.private)
               )
-              signatures[`signed_${key}`] = encode(signature)
+              signatures[`${key}`] = encode(signature)
             })
             publicKeySignatures[signKey.public] = signatures
           })
@@ -409,7 +408,7 @@ export default {
         }
 
         // Update canary
-        this.canary = Object.assign({}, { canary: canary })
+        this.canary = canary
         this.step = 2
       } catch (e) {
         console.log(e)
