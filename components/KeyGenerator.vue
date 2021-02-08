@@ -63,6 +63,7 @@
         <v-btn
           @click="
             isOpen = false
+            
             $emit('onClose')
           "
           color="primary"
@@ -109,17 +110,14 @@ export default {
   methods: {
     async generateKeyPair() {
       let newPrivateKey = ed.utils.randomPrivateKey()
-      console.log(newPrivateKey)
       newPrivateKey = encode(newPrivateKey)
       this.$emit('update:privateKey', newPrivateKey)
       let newPublicKey = await ed.getPublicKey(decodeToUint8Array(newPrivateKey))
-      console.log(newPublicKey)
       this.$emit('update:publicKey', encode(newPublicKey))
     },
     async renewPublicKey() {
       if (this.privateKey) {
         let newPublicKey = await ed.getPublicKey(decodeToUint8Array(this.privateKey))
-        console.log(newPublicKey)
         this.$emit('update:publicKey', encode(newPublicKey))
       }
     },

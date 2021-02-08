@@ -433,12 +433,12 @@ export default {
         this.pubKeyToAdd = encode(publicKey)
       }
       this.removeSignKey({
-        public: this.signKeyToAdd,
-        private: this.pubKeyToAdd,
+        private: this.signKeyToAdd,
+        public: this.pubKeyToAdd,
       })
       this.signKeys.push({
-        public: this.signKeyToAdd,
-        private: this.pubKeyToAdd,
+        private: this.signKeyToAdd,
+        public: this.pubKeyToAdd,
       })
       this.signKeyToAdd = ''
       this.pubKeyToAdd = ''
@@ -498,47 +498,9 @@ export default {
       this.expiry = c.expiry.split('T')[0]
       if (c.threat.length > 0) this.triggered = true
       this.codes = c.threat.map((c) => c.value)
-      console.log(Number(c.version))
     }
     this.setPassingCanary({})
     this.getLatestHash()
-
-    console.log('--------------')
-    console.log('--------------')
-    const privateKey = ed.utils.randomPrivateKey() // 32-byte Uint8Array or string.
-    const msgHash =
-      'deadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeef'
-    const publicKey = await ed.getPublicKey(privateKey)
-    console.log('private key original:')
-    console.log(privateKey)
-    console.log('private key encrypted:')
-    let privateKeyEncrypted = encode(privateKey)
-    console.log(privateKeyEncrypted)
-    console.log(decodeToUint8Array(privateKeyEncrypted))
-    console.log('public key original:')
-    console.log(publicKey)
-    console.log('private key encrypted:')
-    let publicKeyEncrypted = encode(publicKey)
-    console.log(publicKeyEncrypted)
-    console.log(decodeToUint8Array(publicKeyEncrypted))
-    console.log('msg original:')
-    console.log(msgHash)
-    console.log('msg encrypted:')
-    let encryptedMsgHash = encode(msgHash)
-    console.log(encryptedMsgHash)
-    console.log(decode(encryptedMsgHash))
-    const signature = await ed.sign(msgHash, privateKey)
-    console.log('signature original:')
-    console.log(signature)
-
-    const isSigned = await ed.verify(
-      decode(encode(signature)),
-      decode(encode(msgHash)),
-      decodeToUint8Array(encode(publicKey))
-    )
-    console.log('is Signed: ' + isSigned)
-    console.log('--------------')
-    console.log('--------------')
   },
 }
 </script>

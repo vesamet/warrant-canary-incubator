@@ -68,26 +68,38 @@
             /></span>
           </p>
           <v-divider class="my-3 black"></v-divider>
-          <p>
-            <strong>░ Public keys: </strong>
+          <div v-if="validated.pubkeys.length > 0">
+            <strong :class="!validated.allKeysValid ? 'error--text' : ''"
+              >░ Public keys:
+            </strong>
+            <v-icon v-if="!validated.allKeysValid" color="error"
+              >mdi-alert-decagram</v-icon
+            >
             <v-icon
               color="primary"
               @click="viewPubKeys = !viewPubKeys"
               class="float-right"
               >{{ viewPubKeys ? 'mdi-eye-off' : 'mdi-eye' }}</v-icon
             >
-            <code v-if="viewPubKeys">{{ validated.pubkeys }}</code>
-          </p>
-          <p v-if="validated.newpubkey">
-            <strong>░ New public key: </strong>
-            <v-icon
-              color="secondary"
-              @click="viewNewPubKey = !viewNewPubKey"
-              class="float-right"
-              >{{ viewNewPubKey ? 'mdi-eye' : 'mdi-eye-off' }}</v-icon
+            <span
+              v-if="!validated.allKeysValid"
+              class="error--text pb-1 d-inline-block ml-3"
+              style="font-size: 0.9em"
+              >One or more keys failed signing verification</span
             >
-            <code v-if="viewNewPubKey">{{ validated.newpubkey }}</code>
-          </p>
+            <div v-for="key in validated.pubkeys" :key="key.publicKey">
+              <code v-if="viewPubKeys" class="d-inline-block mr-2">
+                <v-icon v-if="!key.isValid" color="error" class="d-inline-block"
+                  >mdi-alert-decagram</v-icon
+                >
+                <v-icon v-else color="success" class="d-inline-block"
+                  >mdi-check-circle</v-icon
+                >
+                {{ key.publicKey }}</code
+              >
+            </div>
+          </div>
+
           <p v-if="validated.panickey">
             <strong>░ Panic key: </strong>
             <v-icon
@@ -97,16 +109,6 @@
               >{{ viewPanicKey ? 'mdi-eye-off' : 'mdi-eye' }}</v-icon
             >
             <code v-if="viewPanicKey">{{ validated.panickey }}</code>
-          </p>
-          <p v-if="validated.newpanickey">
-            <strong>░ New panic key: </strong>
-            <v-icon
-              color="primary"
-              @click="viewNewPanicKey = !viewNewPanicKey"
-              class="float-right"
-              >{{ viewNewPanicKey ? 'mdi-eye-off' : 'mdi-eye' }}</v-icon
-            >
-            <code v-if="viewNewPanicKey">{{ validated.newpanickey }}</code>
           </p>
           <v-btn
             small
@@ -128,7 +130,7 @@
 
 <script>
 import * as ed from 'noble-ed25519'
-import { encode, decode, decodeToUint8Array } from '@/utils/base64'
+import { decode, decodeToUint8Array } from '@/utils/base64'
 import { mapMutations } from 'vuex'
 import '@/assets/jsonEditorTheme.js'
 import '@/assets/jsonEditorCustomStyle.css'
@@ -164,8 +166,8 @@ export default {
 
       // Define signatures state
       let signaturesState = []
+      let allKeysValid = true
       let signaturesObject = this.canary?.canary?.signatures
-      console.log(signaturesObject)
       if (signaturesObject) {
         await this.asyncForEach(
           Object.entries(signaturesObject),
@@ -176,17 +178,24 @@ export default {
               Object.entries(signatures),
               async (entry) => {
                 const [property, signature] = entry
-                let propertyContent = this.canary?.canary?.claims[property.replace('signed_','')]
-                console.log(decodeToUint8Array(publicKey))
-                console.log(String(propertyContent))  
-                 let isSigned = await ed.verify(decode(signature), String(propertyContent), decodeToUint8Array(publicKey));
-                 console.log(isSigned)
-                 console.log( await ed.verify(decode(signature), String(propertyContent), decodeToUint8Array(publicKey)))
-                 if(!isSigned) isValid = false
+                let propertyContent = this.canary?.canary?.claims[
+                  property.replace('signed_', '')
+                ]
+                let isSigned = await ed.verify(
+                  decode(signature),
+                  String(propertyContent),
+                  decodeToUint8Array(publicKey)
+                )
+                if (!isSigned) {
+                  isValid = false
+                  allKeysValid = false
+                }
               }
             )
+            signaturesState.push({ publicKey: publicKey, isValid: isValid })
           }
         )
+        console.log(signaturesState)
       }
 
       //TODO: Check if one of the signatures is the panick key
@@ -220,7 +229,8 @@ export default {
       // Format the canary
       this.validated = {
         domain: this.canary?.canary?.claims?.domain,
-        pubkeys: this.canary?.canary?.claims?.pubkeys,
+        pubkeys: signaturesState.length > 0 ? signaturesState : [],
+        allKeysValid: allKeysValid,
         panickey: this.canary?.canary?.claims?.panickey,
         freshness: this.canary?.canary?.claims?.freshness,
         release: this.canary?.canary?.claims?.release,
